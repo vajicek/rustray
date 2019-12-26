@@ -7,10 +7,16 @@ use std::clone::Clone;
 use std::fmt::Display;
 use std::convert::From;
 
+use crate::scene::Vec3;
+
 pub struct Image<T> {
     pub width: usize,
     pub height: usize,
     pixels: Vec<T>
+}
+
+pub trait Scaling<T> {
+    fn scale(&mut self, from: T, to: T);
 }
 
 impl<T: Clone + Display + Copy + Default> Image<T> {
@@ -48,27 +54,45 @@ impl<T: Clone + Display + Copy + Default> Image<T> {
             }
         }
     }
+}
 
-    pub fn convert<P: Clone + Display + Copy + Default + From<f32>>(&self) -> Image<P> {
-        let new_image = Image::<P>::new(self.width, self.height);
-        for y in 0..self.height {
-            for x in 0..self.width {
-                let v = P::from(self.get(x, y));
-                new_image.set(x, y, v);
+impl<f32> Scaling<f32> for Image<f32> {
+    fn scale(&mut self, from: f32, to: f32) {
+        let minValue = self.pixels.iter().fold(std::f32::MAX, |a, &b| a.min(b));
+        let maxValue = self.pixels.iter().fold(std::f32::MIN, |a, &b| a.max(b));
+        let range = (maxValue - minValue);
+        let target_range = to - from;
+        for pixel in &mut self.pixels {
+            *pixel = from + target_range * (*pixel - minValue) / range;
+        } 
+    }
+}
+
+impl<Vec3> Scaling<Vec3> for Image<Vec3> {
+    fn scale(&mut self, from: Vec3, to: Vec3) {
+        /*
+        let minValue = self.pixels.iter().fold(std::f32::MAX, |a, &b| a.min(b));
+        let maxValue = self.pixels.iter().fold(std::f32::MIN, |a, &b| a.max(b));
+        let range = (maxValue - minValue);
+        let target_range = to - from;
+        for pixel in &mut self.pixels {
+            *pixel = from + target_range * (*pixel - minValue) / range;
+        }
+        */
+    }
+}
+
+impl From<Image<f32>> for Image<u8> {
+    fn from(w: Image<f32>) -> Image<u8> {
+        let mut new_image = Image::<u8>::new(w.width, w.height);
+        for y in 0..w.height {
+            for x in 0..w.width {
+                new_image.set(x, y, w.get(x, y) as u8);
             }
         }
         new_image
     }
 }
-
-struct Bip(u8 + );
-
-impl From<f32> for Bip {
-    fn from(value: f32) -> Self {
-        Bip(value as u8)
-    }
-}
-
 
 impl Image<u8> {
     //TODO(vajicek): separate writer module
