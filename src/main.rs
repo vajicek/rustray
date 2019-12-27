@@ -2,6 +2,7 @@ mod image;
 mod scene;
 
 use scene::Vec3;
+use image::Scaling;
 
 //TODO(vajicek): remove
 fn create_and_save_image() {
@@ -39,11 +40,13 @@ fn raytrace() {
 
     let camera = scene::Camera::new();
     let mut screen = image::Image::<Vec3>::new(256, 256);
+    screen.set(0,0,Vec3::new(255.0, 255.0, 255.0));
 
-    scene::raytrace(&camera, &scene_instance, &mut screen);
+    scene::Raytracer::<Vec3>::raytrace(&camera, &scene_instance, &mut screen);
 
+    /*
     screen.scale(Vec3::new(0.0, 0.0, 0.0), Vec3::new(255.0, 255.0, 255.0));   
-    /*let screenshot = image::Image::<u8>::from(screen);
+    let screenshot = image::Image::<u8>::from(screen);
 
     match screenshot.write_pbm("img.pbm")  {
         Ok(_) => {},

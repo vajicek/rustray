@@ -5,6 +5,8 @@ use std::f32;
 use std::cmp::min;
 use std::result::Result;
 use std::fmt::Display;
+use std::ops::AddAssign;
+use std::marker::PhantomData;
 
 use crate::image::Image;
 
@@ -24,6 +26,11 @@ impl Vec3 {
 impl Display for Vec3 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "({}, {}, {})", self.x, self.y, self.z)
+    }
+}
+impl AddAssign for Vec3 {
+    fn add_assign(&mut self, other: Self) {
+        *self = self.add(&other);
     }
 }
 
@@ -61,7 +68,6 @@ impl Material {
 }
 
 pub trait SceneObject {
-    //fn raytrace(&self, ray: &Ray, scene: &Scene) -> Result<f32, bool>;
     fn norm(&self, point: &Vec3) -> Vec3;
     fn intersection(&self, ray: &Ray) -> Result<Vec3, bool>;
     fn material(&self) -> &Material;
@@ -77,17 +83,22 @@ impl Ray {
     }
 }
 
-fn lighting(v: &Vec3, point: &Vec3, norm: &Vec3, mat: &Material, scene: &Scene) -> Vec3 {
-    let mut illum = Vec3::new(0.0, 0.0, 0.0);
-    for light in scene.lights.iter() {
-        let lm = light.pos.sub(&point);
-        let rm = norm.mul(2.0 * lm.dot(&norm)).sub(&lm);
-        let col = light.ia.mul3(&mat.ka).add(
-            &mat.kd.mul(lm.dot(&norm)).mul3(&light.id)).add(
-            &mat.ks.mul(rm.dot(&v)).mul3(&light.is));
-        illum.add(col);
+pub trait LightingTarget<T> {
+    fn evaluate_lighting(v: &Vec3, point: &Vec3, norm: &Vec3, mat: &Material, scene: &Scene) -> T;
+}
+impl LightingTarget<Vec3> for Vec3 {
+    fn evaluate_lighting(v: &Vec3, point: &Vec3, norm: &Vec3, mat: &Material, scene: &Scene) -> Vec3 {
+        let mut illum = Vec3::new(0.0, 0.0, 0.0);
+        for light in scene.lights.iter() {
+            let lm = light.pos.sub(&point);
+            let rm = norm.mul(2.0 * lm.dot(&norm)).sub(&lm);
+            let col = light.ia.mul3(&mat.ka).add(
+                &mat.kd.mul(lm.dot(&norm)).mul3(&light.id)).add(
+                &mat.ks.mul(rm.dot(&v)).mul3(&light.is));
+            illum.add(&col);
+        }
+        illum
     }
-    illum
 }
 
 pub struct Sphere {
@@ -147,23 +158,6 @@ impl Scene {
             lights: lights
         }
     }
-    fn raytrace_object(&self, scene_object: &SceneObject, ray: &Ray) -> Result<Vec3, bool> {
-        let point = scene_object.intersection(ray)?;
-        let norm = scene_object.norm(&point);
-        // model
-        let illum = lighting(&ray.dir, &point, &norm, &scene_object.material(), self);
-        Ok(illum)
-    }
-    pub fn raytrace(&self, ray: &Ray) -> Vec3 {
-        let mut retval: f32 = 0.0;
-        for scene_object in self.scene_objects.iter() {
-            retval += match self.raytrace_object(&**scene_object, &ray) {
-                Err(_) => 0.0,
-                Ok(illum) => illum
-            };
-        }
-        retval
-    }
 }
 
 pub struct Camera {
@@ -175,23 +169,46 @@ impl Camera {
             fd: 1.0
         }
     }
-
-    pub fn screen_sample(&self, pixel: &Vec2i, size: &Vec2i) -> Vec3 {
+    pub fn screen_sample_coord(&self, pixel: &Vec2i, size: &Vec2i) -> Vec3 {
         let centered_x = pixel.x as f32 - 0.5 * size.x as f32;
         let centered_y = pixel.y as f32 - 0.5 * size.y as f32;
         Vec3::new(centered_x / (size.x as f32), centered_y / (size.y as f32), self.fd)
     }
 }
 
-pub fn raytrace<T>(camera: &Camera, scene: &Scene, image: &mut Image<T>) {
-    let screen_size = Vec2i::new(image.width as i32, image.height as i32);
-    let camera_coord = Vec3::new(0.0, 0.0, 0.0);       
-    for y in 0..image.height {
-        for x in 0..image.width {
-            let screen_coord = camera.screen_sample(&Vec2i::new(x as i32, y as i32), &screen_size);
-            let ray = Ray::new(camera_coord.clone(), screen_coord.sub(&camera_coord));
-            image.set(x, y, scene.raytrace(&ray));
+pub struct Raytracer<T> {
+    phantom: PhantomData<T>
+}
+
+impl<T: Clone + Display + Copy + Default + AddAssign + LightingTarget<T>> Raytracer<T> {
+    fn raytrace_object(scene_object: &SceneObject, scene: &Scene, ray: &Ray) -> Result<T, bool> {
+        let point = scene_object.intersection(ray)?;
+        let norm = scene_object.norm(&point);
+        let illum = T::evaluate_lighting(&ray.dir, &point, &norm, &scene_object.material(), scene);
+        Ok(illum)
+    }
+
+    fn raytrace_scene(scene: &Scene, ray: &Ray) -> T {
+        let mut retval = T::default();
+        for scene_object in scene.scene_objects.iter() {
+            match Raytracer::<T>::raytrace_object(&**scene_object, scene, ray) {
+                Err(_) => {},
+                Ok(illum) => { retval += illum; }
+            };
+        }
+        retval
+    }
+
+    pub fn raytrace(camera: &Camera, scene: &Scene, image: &mut Image<T>) {
+        let screen_size = Vec2i::new(image.width as i32, image.height as i32);
+        let camera_coord = Vec3::new(0.0, 0.0, 0.0);       
+        for y in 0..image.height {
+            for x in 0..image.width {
+                let sample_coord = camera.screen_sample_coord(&Vec2i::new(x as i32, y as i32), &screen_size);
+                let ray = Ray::new(camera_coord.clone(), sample_coord.sub(&camera_coord));
+                let sample_value: T = Raytracer::<T>::raytrace_scene(&scene, &ray);
+                image.set(x, y, sample_value);
+            }
         }
     }
 }
-

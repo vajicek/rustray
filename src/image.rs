@@ -56,7 +56,7 @@ impl<T: Clone + Display + Copy + Default> Image<T> {
     }
 }
 
-impl<f32> Scaling<f32> for Image<f32> {
+impl Scaling<f32> for Image<f32> {
     fn scale(&mut self, from: f32, to: f32) {
         let minValue = self.pixels.iter().fold(std::f32::MAX, |a, &b| a.min(b));
         let maxValue = self.pixels.iter().fold(std::f32::MIN, |a, &b| a.max(b));
@@ -68,10 +68,10 @@ impl<f32> Scaling<f32> for Image<f32> {
     }
 }
 
-impl<Vec3> Scaling<Vec3> for Image<Vec3> {
+impl Scaling<Vec3> for Image<Vec3> {
     fn scale(&mut self, from: Vec3, to: Vec3) {
+        //let minValue = self.pixels.iter().fold(std::f32::MAX, |a, &b| a.min(b));
         /*
-        let minValue = self.pixels.iter().fold(std::f32::MAX, |a, &b| a.min(b));
         let maxValue = self.pixels.iter().fold(std::f32::MIN, |a, &b| a.max(b));
         let range = (maxValue - minValue);
         let target_range = to - from;
