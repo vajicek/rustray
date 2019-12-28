@@ -156,3 +156,14 @@ impl Image<Vec3u8> {
         Ok(())
     }
 }
+
+//TODO(vajicek): make a test
+fn create_and_save_image() {
+    let mut im = Image::<u8>::new(256, 256);
+    im.dump_info();
+    im.checkerboard(32, 0, 255);
+    match im.write_pbm("img.pbm")  {
+        Ok(_) => {},
+        Err(_) => {},
+    };
+}
