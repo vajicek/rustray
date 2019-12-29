@@ -53,6 +53,7 @@ impl<T: Clone + Display + Copy + Default> Image<T> {
 
     // TODO(vajicek): separate module
     pub fn checkerboard(&mut self, size: usize, min: T, max: T) {
+        // TODO(vajicek): add generic function with lambdas
         for y in 0..self.height {
             for x in 0..self.width {
                 if (x / size + y / size) % 2 == 0 {
@@ -102,11 +103,11 @@ impl From<Image<f32>> for Image<u8> {
 }
 
 impl From<Image<Vec3>> for Image<Vec3u8> {
-    fn from(w: Image<Vec3>) -> Image<Vec3u8> {
-        let mut new_image = Image::<Vec3u8>::new(w.width, w.height);
-        for y in 0..w.height {
-            for x in 0..w.width {
-                let element = w.get(x, y);
+    fn from(image: Image<Vec3>) -> Image<Vec3u8> {
+        let mut new_image = Image::<Vec3u8>::new(image.width, image.height);
+        for y in 0..image.height {
+            for x in 0..image.width {
+                let element = image.get(x, y);
                 new_image.set(x, y, Vec3u8::new(element.x as u8, element.y as u8, element.z as u8));
             }
         }

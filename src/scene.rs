@@ -59,17 +59,25 @@ impl Scene {
 }
 
 pub struct Camera {
-    fd: f32
+    fd: f32,
+    camera_coord: Vec3
 }
 impl Camera {
     pub fn new() -> Camera {
         Camera {
-            fd: 1.0
+            fd: 1.0,
+            camera_coord: Vec3::new(0.0, 0.0, 0.0)
         }
     }
-    pub fn screen_sample_coord(&self, pixel: &Vec2i, size: &Vec2i) -> Vec3 {
+
+    fn screen_sample_coord(&self, pixel: &Vec2i, size: &Vec2i) -> Vec3 {
         let centered_x = pixel.x as f32 - 0.5 * size.x as f32;
         let centered_y = pixel.y as f32 - 0.5 * size.y as f32;
         Vec3::new(centered_x / (size.x as f32), centered_y / (size.y as f32), self.fd)
+    }
+
+    pub fn generate_ray(&self, pixel: &Vec2i, screen_size: &Vec2i) -> Ray {
+        let sample_coord = self.screen_sample_coord(pixel, &screen_size);
+        Ray::new(self.camera_coord.clone(), (sample_coord - self.camera_coord).normalize())
     }
 }

@@ -29,6 +29,7 @@ impl LightingTarget<Vec3> for Vec3 {
             let reflected_dir = to_light_dir.reflect(norm);
             let col = mat.kd.mul(to_light_dir.dot(&norm).max(0.0)).mul3(&light.id) +
                 mat.ks.mul((-reflected_dir.dot(&viewer_dir)).max(0.0).powf(mat.alpha)).mul3(&light.is);
+            //TODO(vajicek): add geometry term for shadows
             illum += light.ia.mul3(&mat.ka) + col.mul(light_att);
         }
 
@@ -71,11 +72,9 @@ impl<T: Clone + Display + Copy + Default + AddAssign + LightingTarget<T>> Raytra
 
     pub fn raytrace(camera: &Camera, scene: &Scene, image: &mut Image<T>) {
         let screen_size = Vec2i::new(image.width as i32, image.height as i32);
-        let camera_coord = Vec3::new(0.0, 0.0, 0.0);       
         for y in 0..image.height {
             for x in 0..image.width {
-                let sample_coord = camera.screen_sample_coord(&Vec2i::new(x as i32, y as i32), &screen_size);
-                let ray = Ray::new(camera_coord.clone(), (sample_coord - camera_coord).normalize());
+                let ray = camera.generate_ray(&Vec2i::new(x as i32, y as i32), &screen_size);
                 let sample_value: T = Raytracer::<T>::raytrace_scene(&scene, &ray, 1);
                 image.set(x, y, sample_value);
             }
