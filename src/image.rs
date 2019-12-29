@@ -1,18 +1,16 @@
 // Module for representation of image and operations on images.
 
+use std::clone::Clone;
+use std::convert::From;
+use std::fmt::Display;
 use std::fs;
 use std::io;
 use std::io::prelude::*;
-use std::clone::Clone;
-use std::fmt::Display;
-use std::convert::From;
-use std::ops::Sub;
-use std::ops::Add;
 
-use crate::scene::Vec3;
-use crate::scene::Vec3u8;
-use crate::scene::Bounds;
-use crate::scene::Comparable;
+use crate::math::Bounds;
+use crate::math::Comparable;
+use crate::math::Vec3;
+use crate::math::Vec3u8;
 
 pub struct Image<T> {
     pub width: usize,
@@ -53,11 +51,6 @@ impl<T: Clone + Display + Copy + Default> Image<T> {
         }
     }
 
-    // Debug info
-    pub fn dump_info(&self) {
-        println!("Image {} x {}", self.width, self.height)
-    }
-
     // TODO(vajicek): separate module
     pub fn checkerboard(&mut self, size: usize, min: T, max: T) {
         for y in 0..self.height {
@@ -74,12 +67,12 @@ impl<T: Clone + Display + Copy + Default> Image<T> {
 
 impl Scaling<f32> for Image<f32> {
     fn scale(&mut self, from: f32, to: f32) {
-        let minValue = self.pixels.iter().fold(std::f32::MAX, |a, &b| a.min(b));
-        let maxValue = self.pixels.iter().fold(std::f32::MIN, |a, &b| a.max(b));
-        let range = (maxValue - minValue);
+        let min_value = self.pixels.iter().fold(std::f32::MAX, |a, &b| a.min(b));
+        let max_value = self.pixels.iter().fold(std::f32::MIN, |a, &b| a.max(b));
+        let range = max_value - min_value;
         let target_range = to - from;
         for pixel in &mut self.pixels {
-            *pixel = from + target_range * (*pixel - minValue) / range;
+            *pixel = from + target_range * (*pixel - min_value) / range;
         } 
     }
 }
@@ -158,9 +151,9 @@ impl Image<Vec3u8> {
 }
 
 //TODO(vajicek): make a test
-fn create_and_save_image() {
+#[test]
+fn test_create_and_save_image() {
     let mut im = Image::<u8>::new(256, 256);
-    im.dump_info();
     im.checkerboard(32, 0, 255);
     match im.write_pbm("img.pbm")  {
         Ok(_) => {},

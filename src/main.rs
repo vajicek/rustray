@@ -1,49 +1,60 @@
+mod geometry;
 mod image;
+mod math;
+mod raytracing;
 mod scene;
 
-use scene::Vec3;
-use scene::Vec3u8;
+use geometry::Plane;
+use geometry::Sphere;
+use image::Image;
 use image::Scaling;
+use math::Vec3;
+use math::Vec3u8;
+use raytracing::Raytracer;
+use scene::Camera;
+use scene::Light;
+use scene::Material;
+use scene::Scene;
 
 fn basic_scene() -> scene::Scene {
-    scene::Scene::new(
+    Scene::new(
         vec![
-            Box::new(scene::Sphere::new(
+            Box::new(Sphere::new(
                 Vec3::new(-1.0, 0.0, 6.0), 1.0, 
-                scene::Material::new(
+                Material::new(
                     Vec3::new(0.01, 0.0, 0.01),
                     Vec3::new(1.0, 0.0, 1.0),
                     Vec3::new(1.0, 1.0, 1.0),
                     100.0, 0.1))),
-            Box::new(scene::Sphere::new(
+            Box::new(Sphere::new(
                 Vec3::new(1.0, 0.0, 4.0), 0.8,
-                scene::Material::new(
+                Material::new(
                     Vec3::new(0.01, 0.01, 0.0),
                     Vec3::new(1.0, 1.0, 0.0),
                     Vec3::new(0.0, 0.0, 0.0),
                     1.0, 0.5))),
-            Box::new(scene::Plane::new(
+            Box::new(Plane::new(
                 Vec3::new(0.0, -1.0, 0.0),
                 Vec3::new(0.0, 1.0, 0.0),
-                scene::Material::new(
+                Material::new(
                     Vec3::new(0.0, 0.0, 0.0),
                     Vec3::new(0.0, 1.0, 0.0),
                     Vec3::new(0.0, 0.0, 0.0),
                     1.0, 0.8)))
         ],
         vec![
-            Box::new(scene::Light::new(Vec3::new(0.0, 0.0, 0.0)))
+            Box::new(Light::new(Vec3::new(0.0, 0.0, 0.0)))
         ]
     )
 }
 
 fn raytrace(scene_instance: scene::Scene) {
-    let camera = scene::Camera::new();
-    let mut screen = image::Image::<Vec3>::new(512, 512);
-    scene::Raytracer::<Vec3>::raytrace(&camera, &scene_instance, &mut screen);
+    let camera = Camera::new();
+    let mut screen = Image::<Vec3>::new(512, 512);
+    Raytracer::<Vec3>::raytrace(&camera, &scene_instance, &mut screen);
     screen.scale(Vec3::new(0.0, 0.0, 0.0), Vec3::new(255.0, 255.0, 255.0));   
     screen.flipy();
-    let screenshot = image::Image::<Vec3u8>::from(screen);   
+    let screenshot = Image::<Vec3u8>::from(screen);   
     match screenshot.write_pbm("img.pbm")  { Ok(_) => {}, Err(_) => {} };
 }
 
