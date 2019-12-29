@@ -49,9 +49,7 @@ pub struct Raytracer<T> {
 impl<T: Clone + Display + Copy + Default + AddAssign + LightingTarget<T>> Raytracer<T> {
 
     fn raytrace_scene(scene: &Scene, ray: &Ray, depth: i32) -> T {
-        let mut retval = T::default();
-
-        let intersections: Vec<(Intersection, &SceneObject)> = scene.scene_objects
+        let intersections: Vec<(Intersection, &dyn SceneObject)> = scene.scene_objects
             .iter()
             .map(|scene_object| (scene_object.intersection(ray), &**scene_object))
             .filter(|intersection_object| intersection_object.0.success)
@@ -59,15 +57,16 @@ impl<T: Clone + Display + Copy + Default + AddAssign + LightingTarget<T>> Raytra
 
         if !intersections.is_empty() {
             let closest_intersection = intersections.iter().fold(intersections[0], |a, &b| if a.0.distance < b.0.distance { a } else { b });
-            retval = T::evaluate_lighting(
+            T::evaluate_lighting(
                 &ray.dir.normalize(),
                 &closest_intersection.0.position,
                 &closest_intersection.0.norm,
                 &closest_intersection.1.material(),
                 scene,
-                depth);
+                depth)
+        } else {
+            T::default()
         }
-        retval
     }
 
     pub fn raytrace(camera: &Camera, scene: &Scene, image: &mut Image<T>) {
