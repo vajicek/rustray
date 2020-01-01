@@ -29,14 +29,26 @@ impl LightingTarget<Vec3> for Vec3 {
             let reflected_dir = to_light_dir.reflect(norm);
             let col = mat.kd.mul(to_light_dir.dot(&norm).max(0.0)).mul3(&light.id) +
                 mat.ks.mul((-reflected_dir.dot(&viewer_dir)).max(0.0).powf(mat.alpha)).mul3(&light.is);
-            //TODO(vajicek): add geometry term for shadows
-            illum += light.ia.mul3(&mat.ka) + col.mul(light_att);
+            let mut gterm = 1.0;
+
+            let ray = Ray::new(point, light.pos - point);
+            let intersections : Vec<Intersection> = scene.scene_objects
+                .iter()
+                .map(|scene_object| scene_object.intersection(ray))
+                .filter(|intersection_object| intersection_object.0.success);
+
+            if !intersections.is_empty() {
+                gterm = 0.0;
+            }
+
+                //TODO(vajicek): add geometry term for shadows
+            illum += light.ia.mul3(&mat.ka) + col.mul(light_att * gterm);
         }
 
         if depth > 0 {
             let ray = Ray::new(*point, viewer_dir.reflect(norm));
             illum = illum.mul(1.0 - mat.reflection) +
-                Raytracer::<Vec3>::raytrace_scene(scene, &ray, depth - 1).mul(mat.reflection);    
+                Raytracer::<Vec3>::raytrace_scene(scene, &ray, depth - 1).mul(mat.reflection);
         }
 
         illum
@@ -49,12 +61,11 @@ pub struct Raytracer<T> {
 impl<T: Clone + Display + Copy + Default + AddAssign + LightingTarget<T>> Raytracer<T> {
 
     fn raytrace_scene(scene: &Scene, ray: &Ray, depth: i32) -> T {
-        let intersections: Vec<(Intersection, &dyn SceneObject)> = scene.scene_objects
+        let intersections : Vec<(Intersection, &dyn SceneObject)> = scene.scene_objects
             .iter()
             .map(|scene_object| (scene_object.intersection(ray), &**scene_object))
             .filter(|intersection_object| intersection_object.0.success)
             .collect();
-
         if !intersections.is_empty() {
             let closest_intersection = intersections.iter().fold(intersections[0], |a, &b| if a.0.distance < b.0.distance { a } else { b });
             T::evaluate_lighting(
