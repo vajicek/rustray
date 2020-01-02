@@ -19,7 +19,7 @@ pub struct Intersection {
     pub position: Vec3,
     pub norm: Vec3,
     pub distance: f32,
-    pub success: bool
+    pub success: bool,
 }
 impl Intersection {
     pub fn new(position: Vec3, norm: Vec3, distance: f32) -> Intersection { Intersection { position: position, norm: norm, distance: distance, success: true } }
@@ -37,11 +37,11 @@ impl Sphere {
 #[test]
 fn test_intersection() {
     let sphere = Sphere::new(Vec3::new(0.0, 0.0, 0.0), 1.0,
-        Material::new(Vec3::new(0.1, 0.1, 0.1), Vec3::new(0.1, 0.1, 0.1), Vec3::new(0.0, 0.0, 0.0), 1.0));
+        Material::new(Vec3::new(0.1, 0.1, 0.1), Vec3::new(0.1, 0.1, 0.1), Vec3::new(0.0, 0.0, 0.0), 1.0, 1.0));
     let ray = Ray::new(Vec3::new(0.0, 0.0, -5.0), Vec3::new(0.0, 0.0, 1.0));
     let result = sphere.intersection(&ray);
-    assert_eq!(result.is_ok(), true);
-    assert_eq!(result.unwrap(), Vec3::new(0.0, 0.0, -1.0));
+    assert_eq!(result.success, true);
+    assert_eq!(result.position, Vec3::new(0.0, 0.0, -1.0));
 }
 impl SceneObject for Sphere {
     fn material(&self) -> &Material { &self.material }
@@ -50,7 +50,7 @@ impl SceneObject for Sphere {
         let f_x = ray.from - self.center;
         let a = ray.dir.dot(&ray.dir);
         let b = 2.0 * f_x.dot(&ray.dir);
-        let c = f_x.dot(&f_x) - self.radius * self.radius; 
+        let c = f_x.dot(&f_x) - self.radius * self.radius;
 
         let discriminant = b * b - 4.0 * a * c;
         let t;

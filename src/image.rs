@@ -74,7 +74,7 @@ impl Scaling<f32> for Image<f32> {
         let target_range = to - from;
         for pixel in &mut self.pixels {
             *pixel = from + target_range * (*pixel - min_value) / range;
-        } 
+        }
     }
 }
 
@@ -117,7 +117,7 @@ impl From<Image<Vec3>> for Image<Vec3u8> {
 
 impl Image<u8> {
     //TODO(vajicek): separate writer module
-    pub fn write_pbm(&self, filename: &str) -> std::io::Result<()> {
+    pub fn write_pbm(&self, filename: String) -> std::io::Result<()> {
         let file = fs::File::create(filename)?;
         let mut writer = io::BufWriter::new(&file);
         writer.write_fmt(format_args!("P2\n"))?;
@@ -135,7 +135,7 @@ impl Image<u8> {
 
 impl Image<Vec3u8> {
     //TODO(vajicek): separate writer module
-    pub fn write_pbm(&self, filename: &str) -> std::io::Result<()> {
+    pub fn write_pbm(&self, filename: String) -> std::io::Result<()> {
         let file = fs::File::create(filename)?;
         let mut writer = io::BufWriter::new(&file);
         writer.write_fmt(format_args!("P3\n"))?;
@@ -156,7 +156,7 @@ impl Image<Vec3u8> {
 fn test_create_and_save_image() {
     let mut im = Image::<u8>::new(256, 256);
     im.checkerboard(32, 0, 255);
-    match im.write_pbm("img.pbm")  {
+    match im.write_pbm("img.pbm".to_string())  {
         Ok(_) => {},
         Err(_) => {},
     };

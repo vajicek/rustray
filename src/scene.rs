@@ -23,8 +23,8 @@ impl Light {
             dir: Vec3::new(0.0, 0.0, 0.0),
             att: Vec3::new(1.0, 1.0, 1.0)
         }
-    } 
-} 
+    }
+}
 
 pub struct Material {
     pub ka: Vec3,

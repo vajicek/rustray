@@ -30,11 +30,10 @@ impl Display for Vec3u8 {
 #[derive(Clone, Debug, Default, Copy, PartialEq)]
 pub struct Vec3 { pub x: f32, pub y: f32, pub z: f32 }
 impl Vec3 {
-    pub fn new (x: f32, y: f32, z: f32) -> Vec3 { Vec3 {x: x, y: y, z: z} } 
+    pub fn new (x: f32, y: f32, z: f32) -> Vec3 { Vec3 {x: x, y: y, z: z} }
     pub fn mul (&self, operand: f32) -> Vec3 { Vec3::new(self.x * operand, self.y * operand, self.z * operand) }
     pub fn mul3 (&self, operand: &Vec3) -> Vec3 { Vec3::new(self.x * operand.x, self.y * operand.y, self.z * operand.z) }
     pub fn dot (&self, operand: &Vec3) -> f32 { self.x * operand.x + self.y * operand.y + self.z * operand.z }
-    pub fn min_element(&self) -> f32 { self.x.min(self.y).min(self.z) }
     pub fn max_element(&self) -> f32 { self.x.max(self.y).max(self.z) }
     pub fn normalize(&self) -> Vec3 { self.mul(1.0 / self.len()) }
     pub fn len(&self) -> f32 { self.dot(self).sqrt() }
@@ -59,10 +58,10 @@ impl Add for Vec3 {
 impl Bounds for Vec3 {
     fn min_value() -> Vec3 { Vec3::new(std::f32::MIN, std::f32::MIN, std::f32::MIN) }
     fn max_value() -> Vec3 { Vec3::new(std::f32::MAX, std::f32::MAX, std::f32::MAX) }
-} 
+}
 impl Comparable for Vec3 {
-    fn min(&self, other: &Vec3) -> Vec3 { if self.max_element() < other.max_element() { *self } else { *other } }    
-    fn max(&self, other: &Vec3) -> Vec3 { if self.max_element() > other.max_element() { *self } else { *other } }    
+    fn min(&self, other: &Vec3) -> Vec3 { if self.max_element() < other.max_element() { *self } else { *other } }
+    fn max(&self, other: &Vec3) -> Vec3 { if self.max_element() > other.max_element() { *self } else { *other } }
 }
 #[test]
 fn test_ord() {

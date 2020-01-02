@@ -29,19 +29,12 @@ impl LightingTarget<Vec3> for Vec3 {
             let reflected_dir = to_light_dir.reflect(norm);
             let col = mat.kd.mul(to_light_dir.dot(&norm).max(0.0)).mul3(&light.id) +
                 mat.ks.mul((-reflected_dir.dot(&viewer_dir)).max(0.0).powf(mat.alpha)).mul3(&light.is);
-            let mut gterm = 1.0;
-
-            let ray = Ray::new(point, light.pos - point);
-            let intersections : Vec<Intersection> = scene.scene_objects
+            let gterm = if scene.scene_objects
                 .iter()
-                .map(|scene_object| scene_object.intersection(ray))
-                .filter(|intersection_object| intersection_object.0.success);
-
-            if !intersections.is_empty() {
-                gterm = 0.0;
-            }
-
-                //TODO(vajicek): add geometry term for shadows
+                .map(|scene_object| scene_object.intersection(&Ray::new(*point, light.pos - *point)))
+                .filter(|intersection| intersection.success && intersection.distance > 0.0 && intersection.distance < 1.0)
+                .next()
+                .is_some() { 0.0 } else { 1.0 };
             illum += light.ia.mul3(&mat.ka) + col.mul(light_att * gterm);
         }
 
